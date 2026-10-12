@@ -2376,3 +2376,20 @@
 	Move with Text	Преместване с текста
 	Fix Position on Page	Фиксирана позиция на страницата
 	Good morning	Добро утро
+	Animation	Анимация
+	Animate the caret (it glides and fades)	Анимиране на курсора (плъзга се и избледнява)
+	On: the caret glides to its new place when you type or use the arrow keys, and its blink fades. Off: it jumps and blinks on and off.	Включено: курсорът се плъзга до новото си място, когато пишете или използвате стрелките, а мигането му избледнява. Изключено: курсорът прескача и мига рязко.
+	Documents	Документи
+	Word document	Документ на Word
+	All files	Всички файлове
+	Recipient lists	Списъци с получатели
+	The system file dialog isn't available, so WordCraft shows its own. To get the system dialog, install a file chooser portal (such as xdg-desktop-portal-gtk) or zenity.	Системният диалогов прозорец за файлове не е наличен, затова WordCraft показва своя. За да получите системния, инсталирайте портал за избор на файлове (например xdg-desktop-portal-gtk) или zenity.
+	Up one level	Едно ниво нагоре
+	Home folder	Домашна папка
+	{name} wasn't found.	{name} не е намерен.
+	{name} already exists. Choose Save again to replace it.	{name} вече съществува. Изберете „Запазване“ отново, за да го замените.
+	This folder can't be read: {error}	Тази папка не може да бъде прочетена: {error}
+	Showing the first {count} items.	Показани са първите {count} елемента.
+	File name:	Име на файла:
+	Browse in WordCraft…	Разглеждане в WordCraft…
+	Open a file with WordCraft's own browser when the system file dialog doesn't appear.	Отваряне на файл чрез собствения браузър на WordCraft, когато системният диалогов прозорец за файлове не се появява.
