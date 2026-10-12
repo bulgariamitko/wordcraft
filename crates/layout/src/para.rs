@@ -994,8 +994,11 @@ pub fn layout_para(p: &Paragraph, env: &ParaEnv) -> ParaLayout {
     let math_props = doc.settings.math.clone().unwrap_or_default();
     // The byte ranges of runs left out of the layout, in order, adjacent runs merged.
     let mut left: Vec<std::ops::Range<usize>> = Vec::new();
+    // Each run's language (`w:lang`, resolved through the styles), for hyphenation.
+    let mut langs: Vec<(std::ops::Range<usize>, Option<String>)> = Vec::new();
     for (range, props) in p.run_ranges() {
         let rc = resolve(props);
+        langs.push((range.clone(), rc.lang.clone()));
         let Some(text) = p.text.get(range.clone()) else { continue };
         if left_out(&rc, b.env.show_hidden, b.env.hide_deleted) {
             match left.last_mut() {
@@ -1309,7 +1312,7 @@ pub fn layout_para(p: &Paragraph, env: &ParaEnv) -> ParaLayout {
         enclosures,
     };
     let auto = env.doc.settings.auto_hyphenation && !pl.rp.suppress_hyphens;
-    pl.hyph_after = hyphenation_points(&text, to_para, &pl, auto, env.doc.settings.hyphenate_caps);
+    pl.hyph_after = hyphenation_points(&text, to_para, &pl, auto, env.doc.settings.hyphenate_caps, &langs);
     pl.left_out = left;
     for k in pl.hyph_after.clone() {
         if let Some(c) = pl.clusters.get_mut(k as usize) {
@@ -2076,8 +2079,16 @@ fn hyphen_glyph(pl: &ParaLayout, style: u16, cache: &mut Vec<(u16, u32, f32)>) -
 /// Clusters after which a line may end with a hyphen: soft hyphens always, and dictionary or
 /// pattern hyphenation points of each word when automatic hyphenation is on. Both are found in
 /// `text`, the paragraph as laid out (without what the layout leaves out, [`left_out`]), and
-/// `to_para` maps the end of a char there to the paragraph's text.
-fn hyphenation_points(text: &str, to_para: impl Fn(usize) -> Option<usize>, pl: &ParaLayout, auto: bool, caps: bool) -> Vec<u32> {
+/// `to_para` maps the end of a char there to the paragraph's text. Each word is hyphenated in the
+/// language of the run it starts in (`langs`: run byte ranges in the paragraph's text).
+fn hyphenation_points(
+    text: &str,
+    to_para: impl Fn(usize) -> Option<usize>,
+    pl: &ParaLayout,
+    auto: bool,
+    caps: bool,
+    langs: &[(std::ops::Range<usize>, Option<String>)],
+) -> Vec<u32> {
     let mut bytes: Vec<usize> = text.char_indices().filter(|(_, c)| *c == SOFT_HYPHEN).map(|(i, c)| i + c.len_utf8()).collect();
     if auto {
         let lim = wordcraft_proof::hyphen::Limits::default();
@@ -2096,7 +2107,13 @@ fn hyphenation_points(text: &str, to_para: impl Fn(usize) -> Option<usize>, pl: 
                         && (caps || !all_caps(w))
                     {
                         let offs: Vec<usize> = w.char_indices().map(|(o, _)| o).collect();
-                        for pt in wordcraft_proof::hyphen::hyphen_points(w, &lim) {
+                        // The word's language: its first letter's run, found by its place in `p.text`.
+                        let first = w.chars().next().map_or(1, char::len_utf8);
+                        let lang = to_para(a + first)
+                            .map(|e| e.saturating_sub(first))
+                            .and_then(|at| langs.iter().find(|(r, _)| r.contains(&at)))
+                            .and_then(|(_, l)| l.as_deref());
+                        for pt in wordcraft_proof::hyphen::hyphen_points_in(w, &lim, lang) {
                             if let Some(o) = offs.get(pt) {
                                 bytes.push(a + o);
                             }
